@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  CASHIER
+}
+
+enum SaleType {
+  CASH
+  CREDIT
+}
+
+enum SaleStatus {
+  ACTIVE
+  VOIDED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  OTHER
+}
+
+model Store {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users        User[]
+  customers    Customer[]
+  sales        Sale[]
+  payments     Payment[]
+  cashClosings CashClosing[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  storeId      String
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CASHIER)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  store    Store         @relation(fields: [storeId], references: [id])
+  sales    Sale[]
+  payments Payment[]
+  closings CashClosing[]
+
+  @@index([storeId])
+}
+
+model Customer {
+  id          String   @id @default(uuid())
+  storeId     String
+  name        String
+  phone       String?
+  creditLimit Int      @default(0)
+  notes       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  store    Store     @relation(fields: [storeId], references: [id])
+  sales    Sale[]
+  payments Payment[]
+
+  @@index([storeId])
+  @@unique([storeId, phone])
+}
+
+model Sale {
+  id         String     @id @default(uuid())
+  storeId    String
+  customerId String?
+  total      Int
+  type       SaleType
+  status     SaleStatus @default(ACTIVE)
+  voidReason String?
+  createdById String
+  createdAt  DateTime   @default(now())
+
+  store     Store      @relation(fields: [storeId], references: [id])
+  customer  Customer?  @relation(fields: [customerId], references: [id])
+  createdBy User       @relation(fields: [createdById], references: [id])
+  items     SaleItem[]
+
+  @@index([storeId, createdAt])
+  @@index([customerId])
+}
+
+model SaleItem {
+  id          String @id @default(uuid())
+  saleId      String
+  description String
+  quantity    Int
+  unitPrice   Int
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  storeId     String
+  customerId  String
+  amount      Int
+  method      PaymentMethod @default(CASH)
+  note        String?
+  createdById String
+  createdAt   DateTime      @default(now())
+
+  store     Store    @relation(fields: [storeId], references: [id])
+  customer  Customer @relation(fields: [customerId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+
+  @@index([storeId, createdAt])
+  @@index([customerId])
+}
+
+model CashClosing {
+  id             String   @id @default(uuid())
+  storeId        String
+  date           DateTime @db.Date
+  expectedAmount Int
+  countedAmount  Int
+  difference     Int
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  store     Store @relation(fields: [storeId], references: [id])
+  createdBy User  @relation(fields: [createdById], references: [id])
+
+  @@unique([storeId, date])
+}
