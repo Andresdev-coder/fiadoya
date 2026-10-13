@@ -6,6 +6,7 @@ import { authRouter } from "./modules/auth/auth.routes";
 import { customersRouter } from "./modules/customers/customers.routes";
 import { salesRouter } from "./modules/sales/sales.routes";
 import { paymentsRouter } from "./modules/payments/payments.routes";
+import { closingsRouter, reportsRouter } from "./modules/reports/reports.routes";
 
 export const app = express();
 
@@ -17,5 +18,7 @@ app.use("/auth", authRouter);
 app.use("/customers", customersRouter)
 app.use("/sales", salesRouter)
 app.use("/payments", paymentsRouter)
+app.use("/reports", reportsRouter)
+app.use("/cash-closings", closingsRouter)
 
 app.use(errorHandler);
