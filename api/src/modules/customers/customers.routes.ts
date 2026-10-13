@@ -6,6 +6,7 @@ import {
   updateCustomerSchema,
 } from "./customers.schemas";
 import * as service from "./customers.service";
+import { idParam } from "../../middlewares/params";
 
 export const customersRouter = Router();
 
@@ -23,11 +24,18 @@ customersRouter.post("/", async (req, res) => {
   res.status(201).json(await service.create(ctx(req), data));
 });
 
+customersRouter.get("/:id/statement", async (req, res) => {
+  const id = idParam.parse(req.params.id);
+  res.json(await service.statement(ctx(req), id));
+});
+
 customersRouter.get("/:id", async (req, res) => {
-  res.json(await service.getById(ctx(req), req.params.id));
+  const id = idParam.parse(req.params.id);
+  res.json(await service.getById(ctx(req), id));
 });
 
 customersRouter.patch("/:id", async (req, res) => {
+  const id = idParam.parse(req.params.id);
   const data = updateCustomerSchema.parse(req.body);
-  res.json(await service.update(ctx(req), req.params.id, data));
+  res.json(await service.update(ctx(req), id, data));
 });

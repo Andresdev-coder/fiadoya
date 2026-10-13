@@ -1,22 +1,32 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../middlewares/errorHandler";
-import type { Role } from "../../generated/prisma/client";
+import type { Prisma, Role } from "../../generated/prisma/client";
 import { createCustomerSchema, listCustomersSchema, updateCustomerSchema } from "./customers.schemas";
 import { z } from "zod";
 
 type Ctx = { storeId: string; role: Role };
+export type Db = Prisma.TransactionClient;
 
-/** Saldo por cliente = fiados activos - abonos. Una sola consulta por tabla. */
-export async function balancesFor(storeId: string, customerIds?: string[]) {
+/** Bloquea la fila del cliente hasta que termine la transacción. */
+export async function lockCustomer(tx: Db, storeId: string, customerId: string) {
+  const rows = await tx.$queryRaw<{ creditLimit: number; active: boolean }[]>`
+    SELECT "creditLimit", "active" FROM "Customer"
+    WHERE "id" = ${customerId} AND "storeId" = ${storeId}
+    FOR UPDATE`;
+  if (!rows[0]) throw new AppError(404, "Cliente no encontrado");
+  return rows[0];
+}
+
+export async function balancesFor(storeId: string, customerIds?: string[], db: Db = prisma) {
   const customerFilter = customerIds ? { in: customerIds } : { not: null };
 
   const [sales, payments] = await Promise.all([
-    prisma.sale.groupBy({
+    db.sale.groupBy({
       by: ["customerId"],
       where: { storeId, type: "CREDIT", status: "ACTIVE", customerId: customerFilter },
       _sum: { total: true },
     }),
-    prisma.payment.groupBy({
+    db.payment.groupBy({
       by: ["customerId"],
       where: { storeId, customerId: customerIds ? { in: customerIds } : undefined },
       _sum: { amount: true },
@@ -33,8 +43,8 @@ export async function balancesFor(storeId: string, customerIds?: string[]) {
   return balances;
 }
 
-export async function getBalance(storeId: string, customerId: string) {
-  const balances = await balancesFor(storeId, [customerId]);
+export async function getBalance(storeId: string, customerId: string, db: Db = prisma) {
+  const balances = await balancesFor(storeId, [customerId], db);
   return balances.get(customerId) ?? 0;
 }
 
@@ -107,4 +117,55 @@ export async function update(ctx: Ctx, id: string, input: z.infer<typeof updateC
   } catch (err) {
     handleUnique(err);
   }
+}
+
+type StatementEntry = {
+  kind: "SALE" | "PAYMENT";
+  id: string;
+  date: Date;
+  amount: number;
+  status: "ACTIVE" | "VOIDED";
+  detail: string;
+};
+
+export async function statement(ctx: Ctx, id: string) {
+  const customer = await getById(ctx, id);
+
+  const [sales, payments] = await Promise.all([
+    prisma.sale.findMany({
+      where: { storeId: ctx.storeId, customerId: id, type: "CREDIT" },
+      include: { items: true },
+    }),
+    prisma.payment.findMany({ where: { storeId: ctx.storeId, customerId: id } }),
+  ]);
+
+  const entries: StatementEntry[] = [
+    ...sales.map((s) => ({
+      kind: "SALE" as const,
+      id: s.id,
+      date: s.createdAt,
+      amount: s.total,
+      status: s.status,
+      detail:
+        s.status === "VOIDED"
+          ? `Anulada: ${s.voidReason ?? "sin motivo"}`
+          : s.items.map((i) => `${i.quantity} x ${i.description}`).join(", "),
+    })),
+    ...payments.map((p) => ({
+      kind: "PAYMENT" as const,
+      id: p.id,
+      date: p.createdAt,
+      amount: p.amount,
+      status: "ACTIVE" as const,
+      detail: p.note ?? `Abono (${p.method})`,
+    })),
+  ].sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  let running = 0;
+  const lines = entries.map((e) => {
+    if (e.status === "ACTIVE") running += e.kind === "SALE" ? e.amount : -e.amount;
+    return { ...e, balanceAfter: running };
+  });
+
+  return { customer, balance: running, entries: lines };
 }
