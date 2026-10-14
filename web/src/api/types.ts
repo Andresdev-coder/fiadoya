@@ -8,4 +8,16 @@ export type User = {
   storeId: string;
 };
 
+export type Customer = {
+  id: string;
+  name: string;
+  phone: string | null;
+  creditLimit: number;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+  balance: number;
+  available: number;
+};
+
 export type AuthResponse = { token: string; user: User };
