@@ -4,9 +4,10 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Customers from "./pages/Customers";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Soon from "./pages/Soon";
 import NewSale from "./pages/NewSale";
 import CustomerDetail from "./pages/CustomerDetail";
+import { OwnerRoute } from "./components/OwnerRoute";
+import Reports from "./pages/Reports";
 
 export default function App() {
   return (
@@ -20,7 +21,9 @@ export default function App() {
           <Route path="/clientes" element={<Customers />} />
           <Route path="/clientes/:id" element={<CustomerDetail />} />
           <Route path="/ventas/nueva" element={<NewSale />} />
-          <Route path="/reportes" element={<Soon title="Reportes" />} />
+          <Route element={<OwnerRoute />}>
+            <Route path="/reportes" element={<Reports />} />
+          </Route>
         </Route>
       </Route>
     </Routes>
