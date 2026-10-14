@@ -80,4 +80,26 @@ export type CashClosing = {
   createdBy?: { id: string; name: string };
 };
 
+export type SaleRow = {
+  id: string;
+  type: "CASH" | "CREDIT";
+  status: "ACTIVE" | "VOIDED";
+  voidReason: string | null;
+  total: number;
+  createdAt: string;
+  customer: { id: string; name: string } | null;
+  items: { description: string; quantity: number }[];
+};
+
+export type PaymentRow = {
+  id: string;
+  amount: number;
+  method: "CASH" | "TRANSFER" | "OTHER";
+  status: "ACTIVE" | "VOIDED";
+  voidReason: string | null;
+  note: string | null;
+  createdAt: string;
+  customer: { id: string; name: string };
+};
+
 export type AuthResponse = { token: string; user: User };

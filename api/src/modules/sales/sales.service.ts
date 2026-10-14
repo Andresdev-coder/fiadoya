@@ -3,13 +3,19 @@ import { prisma } from "../../config/prisma";
 import { AppError } from "../../middlewares/errorHandler";
 import { getBalance, lockCustomer } from "../customers/customers.service";
 import { createSaleSchema, listSalesSchema } from "./sales.schemas";
-import {dayRange} from "../../utils/dates"
+import { dayRange } from "../../utils/dates";
+import { assertDayOpen } from "../../utils/cashGuard";
 
 type Ctx = { storeId: string; userId: string };
 
-
-export async function create(ctx: Ctx, input: z.infer<typeof createSaleSchema>) {
-  const total = input.items.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
+export async function create(
+  ctx: Ctx,
+  input: z.infer<typeof createSaleSchema>,
+) {
+  const total = input.items.reduce(
+    (sum, i) => sum + i.quantity * i.unitPrice,
+    0,
+  );
   if (total <= 0) throw new AppError(400, "El total debe ser mayor a 0");
 
   return prisma.$transaction(async (tx) => {
@@ -43,15 +49,20 @@ export async function create(ctx: Ctx, input: z.infer<typeof createSaleSchema>) 
   });
 }
 
-export async function list(storeId: string, q: z.infer<typeof listSalesSchema>) {
-
+export async function list(
+  storeId: string,
+  q: z.infer<typeof listSalesSchema>,
+) {
   return prisma.sale.findMany({
     where: {
       storeId,
       customerId: q.customerId,
       createdAt: dayRange(q.from, q.to),
     },
-    include: { customer: { select: { id: true, name: true } } },
+    include: {
+      customer: { select: { id: true, name: true } },
+      items: { select: { description: true, quantity: true } },
+    },
     orderBy: { createdAt: "desc" },
     take: q.limit,
   });
@@ -72,9 +83,14 @@ export async function getById(storeId: string, id: string) {
 
 export async function voidSale(ctx: Ctx, id: string, reason: string) {
   return prisma.$transaction(async (tx) => {
-    const sale = await tx.sale.findFirst({ where: { id, storeId: ctx.storeId } });
+    const sale = await tx.sale.findFirst({
+      where: { id, storeId: ctx.storeId },
+    });
     if (!sale) throw new AppError(404, "Venta no encontrada");
-    if (sale.status === "VOIDED") throw new AppError(409, "La venta ya está anulada");
+    if (sale.status === "VOIDED")
+      throw new AppError(409, "La venta ya está anulada");
+    if (sale.type === "CASH")
+      await assertDayOpen(tx, ctx.storeId, sale.createdAt);
 
     if (sale.type === "CREDIT" && sale.customerId) {
       await lockCustomer(tx, ctx.storeId, sale.customerId);
@@ -89,7 +105,7 @@ export async function voidSale(ctx: Ctx, id: string, reason: string) {
 
     return tx.sale.update({
       where: { id },
-      data: { status: "VOIDED", voidReason: reason },
+      data: { status: "VOIDED", voidReason: reason, voidedAt: new Date() },
     });
   });
 }

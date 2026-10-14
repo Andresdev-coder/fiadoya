@@ -4,6 +4,7 @@ import { AppError } from "../../middlewares/errorHandler";
 import { dayRange } from "../../utils/dates";
 import { getBalance, lockCustomer } from "../customers/customers.service";
 import { createPaymentSchema, listPaymentsSchema } from "./payments.schemas";
+import { assertDayOpen } from "../../utils/cashGuard";
 
 type Ctx = { storeId: string; userId: string };
 
@@ -38,5 +39,26 @@ export async function list(storeId: string, q: z.infer<typeof listPaymentsSchema
     include: { customer: { select: { id: true, name: true } } },
     orderBy: { createdAt: "desc" },
     take: q.limit,
+  });
+}
+
+export async function voidPayment(ctx: Ctx, id: string, reason: string) {
+  return prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findFirst({ where: { id, storeId: ctx.storeId } });
+    if (!payment) throw new AppError(404, "Abono no encontrado");
+    if (payment.status === "VOIDED") throw new AppError(409, "El abono ya está anulado");
+
+    // Serializa con ventas y otros abonos del mismo cliente.
+    await lockCustomer(tx, ctx.storeId, payment.customerId);
+    if (payment.method === "CASH") await assertDayOpen(tx, ctx.storeId, payment.createdAt);
+
+    // La condición status evita anular dos veces si llegan dos peticiones a la vez.
+    const result = await tx.payment.updateMany({
+      where: { id, storeId: ctx.storeId, status: "ACTIVE" },
+      data: { status: "VOIDED", voidReason: reason, voidedAt: new Date() },
+    });
+    if (result.count === 0) throw new AppError(409, "El abono ya está anulado");
+
+    return tx.payment.findUniqueOrThrow({ where: { id } });
   });
 }

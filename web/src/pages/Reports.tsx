@@ -1,11 +1,13 @@
-import { Clock, Wallet } from "lucide-react";
+import { Clock, Wallet, Receipt } from "lucide-react";
 import { useState } from "react";
 import { CashTab } from "../components/reports/CashTab";
 import { OverdueTab } from "../components/reports/OverdueTab";
+import { MovementsTab } from "../components/reports/MovementsTab";
 
 const TABS = [
   { id: "overdue", label: "Morosos", icon: Clock },
   { id: "cash", label: "Caja", icon: Wallet },
+  { id: "movements", label: "Movimientos", icon: Receipt },
 ] as const;
 
 export default function Reports() {
@@ -33,7 +35,9 @@ export default function Reports() {
         ))}
       </div>
 
-      {tab === "overdue" ? <OverdueTab /> : <CashTab />}
+      {tab === "overdue" && <OverdueTab />}
+      {tab === "cash" && <CashTab />}
+      {tab === "movements" && <MovementsTab />}
     </section>
   );
 }

@@ -15,3 +15,7 @@ export const listPaymentsSchema = z.object({
   customerId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
+
+export const voidPaymentSchema = z.object({
+  reason: z.string().trim().min(3, "Indica el motivo").max(200),
+});

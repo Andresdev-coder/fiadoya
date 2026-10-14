@@ -17,22 +17,33 @@ export async function overdue(storeId: string, minDays: number) {
     }),
     prisma.payment.groupBy({
       by: ["customerId"],
-      where: { storeId, customerId: { in: debtorIds } },
+      where: { storeId, status: "ACTIVE", customerId: { in: debtorIds } },
       _sum: { amount: true },
       _max: { createdAt: true },
     }),
     prisma.sale.findMany({
-      where: { storeId, type: "CREDIT", status: "ACTIVE", customerId: { in: debtorIds } },
+      where: {
+        storeId,
+        type: "CREDIT",
+        status: "ACTIVE",
+        customerId: { in: debtorIds },
+      },
       select: { customerId: true, total: true, createdAt: true },
       orderBy: { createdAt: "asc" },
     }),
   ]);
 
   const paymentInfo = new Map(
-    payments.map((p) => [p.customerId, { paid: p._sum.amount ?? 0, last: p._max.createdAt }]),
+    payments.map((p) => [
+      p.customerId,
+      { paid: p._sum.amount ?? 0, last: p._max.createdAt },
+    ]),
   );
 
-  const salesByCustomer = new Map<string, { total: number; createdAt: Date }[]>();
+  const salesByCustomer = new Map<
+    string,
+    { total: number; createdAt: Date }[]
+  >();
   for (const s of sales) {
     if (!s.customerId) continue;
     const list = salesByCustomer.get(s.customerId) ?? [];
@@ -86,10 +97,12 @@ export async function dailySummary(storeId: string, date: string = todayCO()) {
     }),
     prisma.payment.groupBy({
       by: ["method"],
-      where: { storeId, createdAt: range },
+      where: { storeId, status: "ACTIVE", createdAt: range },
       _sum: { amount: true },
     }),
-    prisma.sale.count({ where: { storeId, status: "VOIDED", createdAt: range } }),
+    prisma.sale.count({
+      where: { storeId, status: "VOIDED", createdAt: range },
+    }),
   ]);
 
   const cashSales = sales.find((s) => s.type === "CASH")?._sum.total ?? 0;
@@ -106,7 +119,10 @@ export async function dailySummary(storeId: string, date: string = todayCO()) {
       total: cashSales + creditSales,
       count: sales.reduce((n, s) => n + s._count._all, 0),
     },
-    payments: { byMethod, total: byMethod.CASH + byMethod.TRANSFER + byMethod.OTHER },
+    payments: {
+      byMethod,
+      total: byMethod.CASH + byMethod.TRANSFER + byMethod.OTHER,
+    },
     voidedSales: voided,
     expectedCash: cashSales + byMethod.CASH,
   };
@@ -117,7 +133,8 @@ export async function createClosing(
   input: { date?: string; countedAmount: number },
 ) {
   const date = input.date ?? todayCO();
-  if (date > todayCO()) throw new AppError(400, "No puedes cerrar caja de una fecha futura");
+  if (date > todayCO())
+    throw new AppError(400, "No puedes cerrar caja de una fecha futura");
 
   const summary = await dailySummary(ctx.storeId, date);
 
@@ -134,7 +151,12 @@ export async function createClosing(
     });
     return { ...closing, summary };
   } catch (err) {
-    if (typeof err === "object" && err && "code" in err && err.code === "P2002") {
+    if (
+      typeof err === "object" &&
+      err &&
+      "code" in err &&
+      err.code === "P2002"
+    ) {
       throw new AppError(409, "Ya existe un cierre de caja para esa fecha");
     }
     throw err;

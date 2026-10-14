@@ -28,6 +28,11 @@ enum PaymentMethod {
   OTHER
 }
 
+enum PaymentStatus {
+  ACTIVE
+  VOIDED
+}
+
 model Store {
   id        String   @id @default(uuid())
   name      String
@@ -86,6 +91,7 @@ model Sale {
   voidReason String?
   createdById String
   createdAt  DateTime   @default(now())
+  voidedAt   DateTime?
 
   store     Store      @relation(fields: [storeId], references: [id])
   customer  Customer?  @relation(fields: [customerId], references: [id])
@@ -119,6 +125,10 @@ model Payment {
   store     Store    @relation(fields: [storeId], references: [id])
   customer  Customer @relation(fields: [customerId], references: [id])
   createdBy User     @relation(fields: [createdById], references: [id])
+
+  status     PaymentStatus @default(ACTIVE)
+  voidReason String?
+  voidedAt   DateTime?
 
   @@index([storeId, createdAt])
   @@index([customerId])

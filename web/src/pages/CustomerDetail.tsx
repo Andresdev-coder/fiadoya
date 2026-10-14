@@ -1,4 +1,12 @@
-import { ArrowLeft, HandCoins, Loader, Pencil, Phone, ShoppingBag } from "lucide-react";
+import {
+  ArrowLeft,
+  HandCoins,
+  Loader,
+  Pencil,
+  Phone,
+  ShoppingBag,
+  Ban,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { ApiError } from "../api/client";
@@ -8,6 +16,10 @@ import { Modal } from "../components/Modal";
 import { PaymentForm } from "../components/PaymentForm";
 import { useAuth } from "../hooks/useAuth";
 import { formatCOP, formatDateTime } from "../lib/format";
+import toast from "react-hot-toast";
+import { useVoidPayment, useVoidSale } from "../api/voids";
+import type { StatementEntry } from "../api/types";
+import { VoidDialog } from "../components/VoidDialog";
 
 export default function CustomerDetail() {
   const { id = "" } = useParams();
@@ -17,6 +29,19 @@ export default function CustomerDetail() {
 
   const [paying, setPaying] = useState(false);
   const [editingLimit, setEditingLimit] = useState(false);
+
+  const [voiding, setVoiding] = useState<StatementEntry | null>(null);
+  const voidSale = useVoidSale();
+  const voidPayment = useVoidPayment();
+
+  async function confirmVoid(reason: string) {
+    if (!voiding) return;
+    if (voiding.kind === "SALE")
+      await voidSale.mutateAsync({ id: voiding.id, reason });
+    else await voidPayment.mutateAsync({ id: voiding.id, reason });
+    toast.success(voiding.kind === "SALE" ? "Fiado anulado" : "Abono anulado");
+    setVoiding(null);
+  }
 
   if (isLoading) {
     return (
@@ -30,9 +55,14 @@ export default function CustomerDetail() {
     return (
       <div className="space-y-3 py-12 text-center">
         <p className="text-slate-600">
-          {error instanceof ApiError ? error.message : "No se pudo cargar el cliente"}
+          {error instanceof ApiError
+            ? error.message
+            : "No se pudo cargar el cliente"}
         </p>
-        <Link to="/clientes" className="font-medium text-emerald-700 hover:underline">
+        <Link
+          to="/clientes"
+          className="font-medium text-emerald-700 hover:underline"
+        >
           Volver a clientes
         </Link>
       </div>
@@ -44,7 +74,10 @@ export default function CustomerDetail() {
 
   return (
     <section className="space-y-5">
-      <Link to="/clientes" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
+      <Link
+        to="/clientes"
+        className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800"
+      >
         <ArrowLeft size={16} /> Clientes
       </Link>
 
@@ -54,7 +87,9 @@ export default function CustomerDetail() {
           <p className="flex items-center gap-1 text-sm text-slate-500">
             <Phone size={14} /> {customer.phone ?? "Sin teléfono"}
           </p>
-          {customer.notes && <p className="mt-1 text-sm text-slate-500">{customer.notes}</p>}
+          {customer.notes && (
+            <p className="mt-1 text-sm text-slate-500">{customer.notes}</p>
+          )}
         </div>
 
         <button
@@ -67,7 +102,11 @@ export default function CustomerDetail() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Debe" value={formatCOP(balance)} tone={balance > 0 ? "warn" : "ok"} />
+        <Stat
+          label="Debe"
+          value={formatCOP(balance)}
+          tone={balance > 0 ? "warn" : "ok"}
+        />
         <Stat
           label="Cupo"
           value={formatCOP(customer.creditLimit)}
@@ -100,7 +139,10 @@ export default function CustomerDetail() {
             const isSale = e.kind === "SALE";
             const voided = e.status === "VOIDED";
             return (
-              <li key={`${e.kind}-${e.id}`} className="flex items-center gap-3 rounded-xl border bg-white p-3">
+              <li
+                key={`${e.kind}-${e.id}`}
+                className="flex items-center gap-3 rounded-xl border bg-white p-3"
+              >
                 <span
                   className={`grid size-9 shrink-0 place-items-center rounded-full ${
                     voided
@@ -114,7 +156,9 @@ export default function CustomerDetail() {
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className={`truncate font-medium ${voided ? "text-slate-400 line-through" : ""}`}>
+                  <p
+                    className={`truncate font-medium ${voided ? "text-slate-400 line-through" : ""}`}
+                  >
                     {isSale ? "Fiado" : "Abono"}
                     {voided && (
                       <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 align-middle text-xs font-normal text-slate-500 no-underline">
@@ -123,19 +167,35 @@ export default function CustomerDetail() {
                     )}
                   </p>
                   <p className="truncate text-sm text-slate-500">{e.detail}</p>
-                  <p className="text-xs text-slate-400">{formatDateTime(e.date)}</p>
+                  <p className="text-xs text-slate-400">
+                    {formatDateTime(e.date)}
+                  </p>
                 </div>
 
                 <div className="shrink-0 text-right">
                   <p
                     className={`font-bold ${
-                      voided ? "text-slate-400 line-through" : isSale ? "text-amber-700" : "text-emerald-700"
+                      voided
+                        ? "text-slate-400 line-through"
+                        : isSale
+                          ? "text-amber-700"
+                          : "text-emerald-700"
                     }`}
                   >
                     {isSale ? "+" : "−"} {formatCOP(e.amount)}
                   </p>
                   {!voided && (
-                    <p className="text-xs text-slate-500">Saldo {formatCOP(e.balanceAfter)}</p>
+                    <p className="text-xs text-slate-500">
+                      Saldo {formatCOP(e.balanceAfter)}
+                    </p>
+                  )}
+                  {isOwner && !voided && (
+                    <button
+                      onClick={() => setVoiding(e)}
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-slate-400 hover:text-red-600"
+                    >
+                      <Ban size={12} /> Anular
+                    </button>
                   )}
                 </div>
               </li>
@@ -156,10 +216,28 @@ export default function CustomerDetail() {
       {editingLimit && (
         <Modal title="Editar cupo" onClose={() => setEditingLimit(false)}>
           <LimitForm
-            customer={{ id: customer.id, creditLimit: customer.creditLimit, balance }}
+            customer={{
+              id: customer.id,
+              creditLimit: customer.creditLimit,
+              balance,
+            }}
             onDone={() => setEditingLimit(false)}
           />
         </Modal>
+      )}
+
+      {voiding && (
+        <VoidDialog
+          title={voiding.kind === "SALE" ? "Anular fiado" : "Anular abono"}
+          summary={`${voiding.kind === "SALE" ? "Fiado" : "Abono"} de ${formatCOP(voiding.amount)} · ${formatDateTime(voiding.date)}`}
+          hint={
+            voiding.kind === "SALE"
+              ? "El saldo del cliente bajará por este valor."
+              : "El saldo del cliente volverá a subir por este valor."
+          }
+          onConfirm={confirmVoid}
+          onClose={() => setVoiding(null)}
+        />
       )}
     </section>
   );
@@ -176,7 +254,12 @@ function Stat({
   tone?: "warn" | "ok";
   action?: React.ReactNode;
 }) {
-  const color = tone === "warn" ? "text-amber-700" : tone === "ok" ? "text-emerald-700" : "text-slate-900";
+  const color =
+    tone === "warn"
+      ? "text-amber-700"
+      : tone === "ok"
+        ? "text-emerald-700"
+        : "text-slate-900";
   return (
     <div className="rounded-xl border bg-white p-3">
       <div className="flex items-center justify-between">
