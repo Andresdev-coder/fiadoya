@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Soon from "./pages/Soon";
 import NewSale from "./pages/NewSale";
+import CustomerDetail from "./pages/CustomerDetail";
 
 export default function App() {
   return (
@@ -17,7 +18,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/clientes" replace />} />
           <Route path="/clientes" element={<Customers />} />
-          <Route path="/clientes/:id" element={<Soon title="Detalle del cliente" />} />
+          <Route path="/clientes/:id" element={<CustomerDetail />} />
           <Route path="/ventas/nueva" element={<NewSale />} />
           <Route path="/reportes" element={<Soon title="Reportes" />} />
         </Route>

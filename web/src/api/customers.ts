@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { Customer } from "./types";
+import type { Customer, Statement } from "./types";
 
 export function useCustomers(search: string, withDebt: boolean) {
   return useQuery({
@@ -28,6 +28,22 @@ export function useCreateCustomer() {
   return useMutation({
     mutationFn: (input: NewCustomer) =>
       api<Customer>("/customers", { method: "POST", body: input }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
+  });
+}
+
+export function useStatement(id: string) {
+  return useQuery({
+    queryKey: ["customers", id, "statement"],
+    queryFn: () => api<Statement>(`/customers/${id}/statement`),
+  });
+}
+
+export function useUpdateCustomer(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { creditLimit: number }) =>
+      api<Customer>(`/customers/${id}`, { method: "PATCH", body: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
   });
 }

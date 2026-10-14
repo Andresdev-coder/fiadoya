@@ -29,4 +29,20 @@ export type Sale = {
   createdAt: string;
 };
 
+export type StatementEntry = {
+  kind: "SALE" | "PAYMENT";
+  id: string;
+  date: string;
+  amount: number;
+  status: "ACTIVE" | "VOIDED";
+  detail: string;
+  balanceAfter: number;
+};
+
+export type Statement = {
+  customer: Customer;
+  balance: number;
+  entries: StatementEntry[];
+};
+
 export type AuthResponse = { token: string; user: User };
