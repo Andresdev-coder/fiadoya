@@ -20,4 +20,13 @@ export type Customer = {
   available: number;
 };
 
+export type Sale = {
+  id: string;
+  type: "CASH" | "CREDIT";
+  status: "ACTIVE" | "VOIDED";
+  total: number;
+  customerId: string | null;
+  createdAt: string;
+};
+
 export type AuthResponse = { token: string; user: User };
