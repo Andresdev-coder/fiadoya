@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:db": "dotenv run -f .env.test -- prisma migrate deploy"
+    "test:db": "dotenv run -f .env.test -- prisma migrate deploy",
+    "db:deploy:prod": "dotenv run -f .env.production -- prisma migrate deploy"
   },
   "keywords": [],
   "author": "",
