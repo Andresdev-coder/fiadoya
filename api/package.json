@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
-    "build": "tsc",
-    "start": "node --env-file=.env dist/server.js",
-    "postinstall": "prisma skills sync || exit 0",
+    "build": "esbuild src/server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.js",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "dotenv run -f .env.test -- prisma migrate deploy"
@@ -43,6 +43,7 @@
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "dotenv-cli": "^11.0.0",
+    "esbuild": "^0.28.2",
     "prisma": "7.10.0",
     "supertest": "^7.3.1",
     "tsx": "^4.23.15",

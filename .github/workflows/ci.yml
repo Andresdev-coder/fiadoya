@@ -45,6 +45,7 @@ jobs:
       - run: pnpm prisma generate
       - run: pnpm prisma migrate deploy
       - run: pnpm tsc --noEmit
+      - run: pnpm build
       - run: pnpm test
 
   web:
