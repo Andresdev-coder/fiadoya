@@ -1,9 +1,12 @@
+import { Loader, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
 import { ApiError } from "../api/client";
+import { AuthShell, SlowHint } from "../components/AuthShell";
 import { Field } from "../components/Field";
 import { useAuth } from "../hooks/useAuth";
+import { useDelayedFlag } from "../hooks/useDelayedFlag";
 
 export default function Login() {
   const { user, login } = useAuth();
@@ -12,6 +15,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const slow = useDelayedFlag(busy);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -30,20 +34,35 @@ export default function Login() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-slate-50 p-4">
-      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-6 shadow">
-        <h1 className="text-2xl font-bold text-emerald-700">FiadoYa</h1>
-        <p className="text-sm text-slate-500">Ingresa a tu tienda</p>
-
-        <Field label="Correo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Field label="Contraseña" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+    <AuthShell title="Bienvenido de nuevo" subtitle="Ingresa a tu tienda para ver tus cuentas.">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <Field
+          label="Correo"
+          type="email"
+          autoComplete="email"
+          icon={<Mail size={18} />}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <Field
+          label="Contraseña"
+          type="password"
+          autoComplete="current-password"
+          icon={<Lock size={18} />}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
 
         {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        <SlowHint show={slow} />
 
         <button
           disabled={busy}
-          className="w-full rounded-lg bg-emerald-600 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
         >
+          {busy && <Loader size={18} className="animate-spin" />}
           {busy ? "Ingresando…" : "Ingresar"}
         </button>
 
@@ -54,6 +73,6 @@ export default function Login() {
           </Link>
         </p>
       </form>
-    </main>
+    </AuthShell>
   );
 }
