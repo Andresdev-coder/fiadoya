@@ -85,7 +85,7 @@ function withBalance<T extends { creditLimit: number; id: string }>(
 
 function handleUnique(err: unknown): never {
   if (typeof err === "object" && err && "code" in err && err.code === "P2002") {
-    throw new AppError(409, "Ya existe un cliente con ese teléfono");
+        throw new AppError(409, "Ya existe un cliente con ese teléfono (puede estar inactivo)");
   }
   throw err;
 }
@@ -97,7 +97,7 @@ export async function list(
   const customers = await prisma.customer.findMany({
     where: {
       storeId: ctx.storeId,
-      active: true,
+      active: query.status === "active",
       ...(query.search && {
         OR: [
           { name: { contains: query.search, mode: "insensitive" } },
@@ -146,6 +146,10 @@ export async function update(
 ) {
   if (input.creditLimit !== undefined && ctx.role !== "OWNER") {
     throw new AppError(403, "Solo el dueño puede cambiar el cupo");
+  }
+
+  if (input.active !== undefined && ctx.role !== "OWNER") {
+    throw new AppError(403, "Solo el dueño puede activar o desactivar clientes");
   }
 
   const current = await getById(ctx, id);

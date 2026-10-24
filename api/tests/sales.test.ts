@@ -1,4 +1,4 @@
-﻿
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   addCashier,
@@ -22,7 +22,7 @@ describe("ventas", () => {
   });
 
   describe("crear", () => {
-    it("calcula el total en el servidor e ignora el que envÃ­e el cliente", async () => {
+    it("calcula el total en el servidor e ignora el que envíe el cliente", async () => {
       const res = await http.post(owner.token, "/sales", {
         type: "CASH",
         total: 1,
@@ -45,7 +45,7 @@ describe("ventas", () => {
       expect(await balanceOf(owner.token, c.id)).toBe(0);
     });
 
-    it("un fiado sin cliente es invÃ¡lido (400)", async () => {
+    it("un fiado sin cliente es inválido (400)", async () => {
       const res = await sale(owner.token, "CREDIT", 1_000);
       expect(res.status).toBe(400);
       expect(res.body.errors.map((e: { field: string }) => e.field)).toContain("customerId");
@@ -80,7 +80,7 @@ describe("ventas", () => {
       expect(await balanceOf(owner.token, c.id)).toBe(60_000);
     });
 
-    it("permite llegar exactamente al cupo, y ni un peso mÃ¡s", async () => {
+    it("permite llegar exactamente al cupo, y ni un peso más", async () => {
       const c = await createCustomer(owner.token, 100_000);
       ok(await sale(owner.token, "CREDIT", 100_000, c.id));
       expect((await sale(owner.token, "CREDIT", 1, c.id)).status).toBe(409);
@@ -112,9 +112,9 @@ describe("ventas", () => {
       const c = await createCustomer(owner.token, 200_000);
       const s = ok(await sale(owner.token, "CREDIT", 120_000, c.id));
 
-      const res = await voidSale(owner.token, s.id, "CobrÃ© mal");
+      const res = await voidSale(owner.token, s.id, "Cobré mal");
       expect(res.status).toBe(200);
-      expect(res.body).toMatchObject({ status: "VOIDED", voidReason: "CobrÃ© mal" });
+      expect(res.body).toMatchObject({ status: "VOIDED", voidReason: "Cobré mal" });
       expect(await balanceOf(owner.token, c.id)).toBe(0);
     });
 
@@ -135,7 +135,7 @@ describe("ventas", () => {
       expect((await voidSale(owner.token, s.id)).status).toBe(409);
     });
 
-    it("no deja anular un fiado si el cliente ya abonÃ³ mÃ¡s de lo que quedarÃ­a debiendo", async () => {
+    it("no deja anular un fiado si el cliente ya abonó más de lo que quedaría debiendo", async () => {
       const c = await createCustomer(owner.token, 200_000);
       const s = ok(await sale(owner.token, "CREDIT", 100_000, c.id));
       ok(await pay(owner.token, c.id, 80_000));
@@ -150,7 +150,7 @@ describe("ventas", () => {
       expect((await voidSale(owner.token, s.id)).status).toBe(200);
     });
 
-    it("una venta de contado NO se puede anular si la caja del dÃ­a ya se cerrÃ³ (409)", async () => {
+    it("una venta de contado NO se puede anular si la caja del día ya se cerró (409)", async () => {
       const s = ok(await sale(owner.token, "CASH", 20_000));
       ok(await closeCash(owner.token, 20_000));
 
@@ -159,7 +159,7 @@ describe("ventas", () => {
       expect(res.body.message).toMatch(/caja/i);
     });
 
-    it("un fiado sÃ­ se puede anular con la caja cerrada, porque no mueve efectivo", async () => {
+    it("un fiado sí se puede anular con la caja cerrada, porque no mueve efectivo", async () => {
       const c = await createCustomer(owner.token, 100_000);
       const s = ok(await sale(owner.token, "CREDIT", 30_000, c.id));
       ok(await closeCash(owner.token, 0));

@@ -1,4 +1,4 @@
-﻿
+
 import { randomUUID } from "node:crypto";
 import bcrypt from "bcrypt";
 import request from "supertest";
@@ -27,21 +27,21 @@ export const http = {
   patch: (token: string, path: string, body?: object) => request(app).patch(path).set(auth(token)).send(body),
 };
 
-/** Exige un cÃ³digo de respuesta y devuelve el body; si no coincide, el error muestra quÃ© llegÃ³. */
+/** Exige un código de respuesta y devuelve el body; si no coincide, el error muestra qué llegó. */
 export function ok(res: Res, expected = 201) {
   if (res.status !== expected) {
-    throw new Error(`Esperaba ${expected} y llegÃ³ ${res.status}: ${JSON.stringify(res.body)}`);
+    throw new Error(`Esperaba ${expected} y llegó ${res.status}: ${JSON.stringify(res.body)}`);
   }
   return res.body;
 }
 
-/** Tienda nueva con su dueÃ±o. Cada prueba usa la suya, asÃ­ quedan aisladas. */
+/** Tienda nueva con su dueño. Cada prueba usa la suya, así quedan aisladas. */
 export async function registerStore(): Promise<Store> {
   const res = await request(app)
     .post("/auth/register")
     .send({
       storeName: "Tienda de pruebas",
-      name: "DueÃ±o",
+      name: "Dueño",
       email: `owner-${randomUUID()}@test.com`,
       password: "12345678",
     });
@@ -49,7 +49,7 @@ export async function registerStore(): Promise<Store> {
   return { token: body.token, storeId: body.user.storeId, userId: body.user.id };
 }
 
-/** AÃºn no hay endpoint para crear cajeros, asÃ­ que se crea directo en la base. */
+/** Aún no hay endpoint para crear cajeros, así que se crea directo en la base. */
 export async function addCashier(storeId: string) {
   const email = `cashier-${randomUUID()}@test.com`;
   await prisma.user.create({
@@ -83,10 +83,10 @@ export const sale = (token: string, type: "CASH" | "CREDIT", amount: number, cus
 export const pay = (token: string, customerId: string, amount: number, method: Method = "CASH") =>
   http.post(token, "/payments", { customerId, amount, method });
 
-export const voidSale = (token: string, id: string, reason = "Error de digitaciÃ³n") =>
+export const voidSale = (token: string, id: string, reason = "Error de digitación") =>
   http.post(token, `/sales/${id}/void`, { reason });
 
-export const voidPayment = (token: string, id: string, reason = "Error de digitaciÃ³n") =>
+export const voidPayment = (token: string, id: string, reason = "Error de digitación") =>
   http.post(token, `/payments/${id}/void`, { reason });
 
 export const closeCash = (token: string, countedAmount = 0) =>

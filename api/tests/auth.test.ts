@@ -1,4 +1,4 @@
-﻿
+
 import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
@@ -13,7 +13,7 @@ const newUser = () => ({
 });
 
 describe("auth", () => {
-  it("registra una tienda con su dueÃ±o y devuelve un token", async () => {
+  it("registra una tienda con su dueño y devuelve un token", async () => {
     const res = await request(app).post("/auth/register").send(newUser());
     expect(res.status).toBe(201);
     expect(res.body.token).toEqual(expect.any(String));
@@ -28,7 +28,7 @@ describe("auth", () => {
     expect(res.status).toBe(409);
   });
 
-  it("rechaza una contraseÃ±a corta (400) seÃ±alando el campo", async () => {
+  it("rechaza una contraseña corta (400) señalando el campo", async () => {
     const res = await request(app)
       .post("/auth/register")
       .send({ ...newUser(), password: "123" });
@@ -36,7 +36,7 @@ describe("auth", () => {
     expect(res.body.errors.map((e: { field: string }) => e.field)).toContain("password");
   });
 
-  it("inicia sesiÃ³n con credenciales correctas", async () => {
+  it("inicia sesión con credenciales correctas", async () => {
     const user = newUser();
     await request(app).post("/auth/register").send(user);
     const res = await request(app).post("/auth/login").send({ email: user.email, password: user.password });
@@ -44,7 +44,7 @@ describe("auth", () => {
     expect(res.body.token).toEqual(expect.any(String));
   });
 
-  it("da el mismo 401 con contraseÃ±a incorrecta y con correo inexistente", async () => {
+  it("da el mismo 401 con contraseña incorrecta y con correo inexistente", async () => {
     const user = newUser();
     await request(app).post("/auth/register").send(user);
 
@@ -62,7 +62,7 @@ describe("auth", () => {
     expect((await request(app).get("/customers")).status).toBe(401);
   });
 
-  it("rechaza un token invÃ¡lido (401)", async () => {
+  it("rechaza un token inválido (401)", async () => {
     expect((await http.get("token-falso", "/customers")).status).toBe(401);
   });
 

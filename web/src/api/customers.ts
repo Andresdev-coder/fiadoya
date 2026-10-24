@@ -2,13 +2,16 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { api } from "./client";
 import type { Customer, Statement } from "./types";
 
-export function useCustomers(search: string, withDebt: boolean) {
+export type CustomerStatus = "active" | "inactive";
+
+export function useCustomers(search: string, withDebt: boolean, status: CustomerStatus = "active") {
   return useQuery({
-    queryKey: ["customers", { search, withDebt }],
+    queryKey: ["customers", { search, withDebt, status }],
     queryFn: () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (withDebt) params.set("withDebt", "true");
+      if (status !== "active") params.set("status", status);
       const qs = params.toString();
       return api<Customer[]>(`/customers${qs ? `?${qs}` : ""}`);
     },
@@ -39,10 +42,18 @@ export function useStatement(id: string) {
   });
 }
 
+export type CustomerChanges = {
+  name?: string;
+  phone?: string | null;
+  notes?: string | null;
+  creditLimit?: number;
+  active?: boolean;
+};
+
 export function useUpdateCustomer(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { creditLimit: number }) =>
+    mutationFn: (input: CustomerChanges) =>
       api<Customer>(`/customers/${id}`, { method: "PATCH", body: input }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
   });

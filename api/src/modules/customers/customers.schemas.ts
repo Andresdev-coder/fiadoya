@@ -16,9 +16,14 @@ export const createCustomerSchema = base.extend({
   creditLimit: base.shape.creditLimit.default(0),
 });
 
-export const updateCustomerSchema = base.partial().extend({ active: z.boolean().optional() });
+export const updateCustomerSchema = base.partial().extend({
+  phone: phone.nullable().optional(),
+  notes: z.string().trim().max(300).nullable().optional(),
+  active: z.boolean().optional(),
+});
 
 export const listCustomersSchema = z.object({
   search: z.string().trim().optional(),
   withDebt: z.enum(["true", "false"]).optional(),
+  status: z.enum(["active", "inactive"]).default("active"),
 });

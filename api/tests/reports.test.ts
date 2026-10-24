@@ -1,4 +1,4 @@
-﻿
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   addCashier,
@@ -23,7 +23,7 @@ describe("reportes", () => {
     owner = await registerStore();
   });
 
-  describe("resumen del dÃ­a", () => {
+  describe("resumen del día", () => {
     it("separa contado, fiado y abonos, y calcula el efectivo esperado", async () => {
       const c = await createCustomer(owner.token, 500_000);
       ok(await sale(owner.token, "CASH", 20_000));
@@ -54,7 +54,7 @@ describe("reportes", () => {
       expect(res.body.voidedSales).toBe(1);
     });
 
-    it("un dÃ­a sin movimientos devuelve ceros", async () => {
+    it("un día sin movimientos devuelve ceros", async () => {
       const res = await http.get(owner.token, "/reports/daily-summary?date=2020-01-01");
       expect(res.status).toBe(200);
       expect(res.body.expectedCash).toBe(0);
@@ -77,7 +77,7 @@ describe("reportes", () => {
       expect(res.body).toMatchObject({ expectedAmount: 50_000, countedAmount: 48_000, difference: -2_000 });
     });
 
-    it("solo permite un cierre por dÃ­a (409)", async () => {
+    it("solo permite un cierre por día (409)", async () => {
       ok(await closeCash(owner.token, 0));
       expect((await closeCash(owner.token, 0)).status).toBe(409);
     });
@@ -88,7 +88,7 @@ describe("reportes", () => {
       expect((await closeCash(owner.token, -1)).status).toBe(400);
     });
 
-    it("el dueÃ±o ve el historial de cierres", async () => {
+    it("el dueño ve el historial de cierres", async () => {
       ok(await closeCash(owner.token, 0));
       const res = await http.get(owner.token, "/cash-closings");
       expect(res.status).toBe(200);
@@ -108,7 +108,7 @@ describe("reportes", () => {
     const setSaleDate = (id: string, days: number) =>
       prisma.sale.update({ where: { id }, data: { createdAt: daysAgo(days) } });
 
-    it("lista a quien debe, con dÃ­as de mora y total adeudado", async () => {
+    it("lista a quien debe, con días de mora y total adeudado", async () => {
       const c = await createCustomer(owner.token, 500_000, "Moroso");
       const s = ok(await sale(owner.token, "CREDIT", 80_000, c.id));
       await setSaleDate(s.id, 40);
@@ -128,14 +128,14 @@ describe("reportes", () => {
       expect((await http.get(owner.token, "/reports/overdue?minDays=60")).body.count).toBe(0);
     });
 
-    it("los abonos cubren primero la deuda mÃ¡s antigua (FIFO)", async () => {
+    it("los abonos cubren primero la deuda más antigua (FIFO)", async () => {
       const c = await createCustomer(owner.token, 500_000);
       const old = ok(await sale(owner.token, "CREDIT", 100_000, c.id));
       const recent = ok(await sale(owner.token, "CREDIT", 50_000, c.id));
       await setSaleDate(old.id, 60);
       await setSaleDate(recent.id, 5);
 
-      // Paga justo la deuda vieja: lo que queda es la de hace 5 dÃ­as, no la de 60.
+      // Paga justo la deuda vieja: lo que queda es la de hace 5 días, no la de 60.
       ok(await pay(owner.token, c.id, 100_000));
 
       const res = await http.get(owner.token, "/reports/overdue");

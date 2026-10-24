@@ -1,4 +1,4 @@
-﻿
+
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   addCashier,
@@ -34,7 +34,7 @@ describe("abonos", () => {
       expect(await balanceOf(owner.token, customer.id)).toBe(70_000);
     });
 
-    it("pagar toda la deuda deja el saldo en 0, y despuÃ©s ya no se puede abonar", async () => {
+    it("pagar toda la deuda deja el saldo en 0, y después ya no se puede abonar", async () => {
       const res = await pay(owner.token, customer.id, 120_000);
       expect(res.body.balanceAfter).toBe(0);
 
@@ -50,7 +50,7 @@ describe("abonos", () => {
       expect(await balanceOf(owner.token, customer.id)).toBe(120_000);
     });
 
-    it.each([0, -5, 100.5])("rechaza un monto invÃ¡lido (%s) con 400", async (amount) => {
+    it.each([0, -5, 100.5])("rechaza un monto inválido (%s) con 400", async (amount) => {
       expect((await pay(owner.token, customer.id, amount)).status).toBe(400);
     });
 
@@ -92,7 +92,7 @@ describe("abonos", () => {
       expect(res.body.message).toMatch(/caja/i);
     });
 
-    it("un abono por transferencia sÃ­ se puede anular con la caja cerrada", async () => {
+    it("un abono por transferencia sí se puede anular con la caja cerrada", async () => {
       const p = ok(await pay(owner.token, customer.id, 10_000, "TRANSFER"));
       ok(await closeCash(owner.token, 0));
       expect((await voidPayment(owner.token, p.id)).status).toBe(200);

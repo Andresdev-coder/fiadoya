@@ -1,11 +1,11 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { balanceOf, createCustomer, ok, pay, registerStore, sale } from "./helpers";
 
 describe("concurrencia", () => {
-  it("dos fiados simultÃ¡neos no pueden pasar el cupo entre los dos", async () => {
+  it("dos fiados simultáneos no pueden pasar el cupo entre los dos", async () => {
     const owner = await registerStore();
 
-    // Varias rondas: una condiciÃ³n de carrera no siempre se manifiesta a la primera.
+    // Varias rondas: una condición de carrera no siempre se manifiesta a la primera.
     for (let round = 1; round <= 5; round++) {
       const c = await createCustomer(owner.token, 200_000, `Cliente ronda ${round}`);
 
@@ -20,7 +20,7 @@ describe("concurrencia", () => {
     }
   });
 
-  it("de 8 fiados simultÃ¡neos caben exactamente los que entran en el cupo", async () => {
+  it("de 8 fiados simultáneos caben exactamente los que entran en el cupo", async () => {
     const owner = await registerStore();
     const c = await createCustomer(owner.token, 100_000);
 
@@ -31,7 +31,7 @@ describe("concurrencia", () => {
     expect(await balanceOf(owner.token, c.id)).toBe(90_000);
   });
 
-  it("dos abonos simultÃ¡neos no pueden dejar el saldo en negativo", async () => {
+  it("dos abonos simultáneos no pueden dejar el saldo en negativo", async () => {
     const owner = await registerStore();
 
     for (let round = 1; round <= 5; round++) {

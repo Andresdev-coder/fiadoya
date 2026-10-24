@@ -1,5 +1,4 @@
-﻿
-import { beforeEach, describe, expect, it } from "vitest";
+﻿import { beforeEach, describe, expect, it } from "vitest";
 import { addCashier, createCustomer, http, ok, pay, registerStore, sale, type Store } from "./helpers";
 
 describe("clientes", () => {
@@ -11,22 +10,22 @@ describe("clientes", () => {
 
   it("crea un cliente con saldo 0 y todo el cupo disponible", async () => {
     const res = await http.post(owner.token, "/customers", {
-      name: "DoÃ±a Marta",
+      name: "Doña Marta",
       phone: "3001234567",
       creditLimit: 200_000,
     });
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ name: "DoÃ±a Marta", balance: 0, available: 200_000 });
+    expect(res.body).toMatchObject({ name: "Doña Marta", balance: 0, available: 200_000 });
   });
 
-  it("guarda y encuentra nombres con tildes y Ã±, sin importar mayÃºsculas", async () => {
-    ok(await http.post(owner.token, "/customers", { name: "DoÃ±a Marta", creditLimit: 0 }));
-    const res = await http.get(owner.token, `/customers?search=${encodeURIComponent("doÃ±a")}`);
+  it("guarda y encuentra nombres con tildes y ñ, sin importar mayúsculas", async () => {
+    ok(await http.post(owner.token, "/customers", { name: "Doña Marta", creditLimit: 0 }));
+    const res = await http.get(owner.token, `/customers?search=${encodeURIComponent("doña")}`);
     expect(res.body).toHaveLength(1);
-    expect(res.body[0].name).toBe("DoÃ±a Marta");
+    expect(res.body[0].name).toBe("Doña Marta");
   });
 
-  it("rechaza un telÃ©fono repetido en la misma tienda (409) pero lo permite en otra", async () => {
+  it("rechaza un teléfono repetido en la misma tienda (409) pero lo permite en otra", async () => {
     const body = { name: "Cliente Uno", phone: "3001112233", creditLimit: 0 };
     ok(await http.post(owner.token, "/customers", body));
     expect((await http.post(owner.token, "/customers", body)).status).toBe(409);
@@ -37,7 +36,7 @@ describe("clientes", () => {
 
   it.each([
     ["un nombre de una letra", { name: "A" }, "name"],
-    ["un telÃ©fono invÃ¡lido", { name: "Cliente", phone: "abc" }, "phone"],
+    ["un teléfono inválido", { name: "Cliente", phone: "abc" }, "phone"],
     ["un cupo negativo", { name: "Cliente", creditLimit: -1 }, "creditLimit"],
     ["un cupo con decimales", { name: "Cliente", creditLimit: 1000.5 }, "creditLimit"],
   ])("rechaza %s (400)", async (_caso, body, field) => {
@@ -74,7 +73,7 @@ describe("clientes", () => {
       expect(res.status).toBe(403);
     });
 
-    it("el cajero sÃ­ puede editar otros datos sin alterar el cupo", async () => {
+    it("el cajero sí puede editar otros datos sin alterar el cupo", async () => {
       const cashier = await addCashier(owner.storeId);
       const c = await createCustomer(owner.token, 100_000);
       const res = await http.patch(cashier, `/customers/${c.id}`, { notes: "Paga los viernes" });
@@ -83,8 +82,8 @@ describe("clientes", () => {
     });
   });
 
-  describe("ediciÃ³n", () => {
-    it("el dueÃ±o cambia el cupo y el disponible se recalcula", async () => {
+  describe("edición", () => {
+    it("el dueño cambia el cupo y el disponible se recalcula", async () => {
       const c = await createCustomer(owner.token, 100_000);
       ok(await sale(owner.token, "CREDIT", 40_000, c.id));
       const res = await http.patch(owner.token, `/customers/${c.id}`, { creditLimit: 300_000 });
@@ -98,16 +97,74 @@ describe("clientes", () => {
       expect(res.body.creditLimit).toBe(200_000);
     });
 
+    it("cambia nombre y teléfono, y permite borrar teléfono y notas con null", async () => {
+      const c = await createCustomer(owner.token, 100_000, "Nombre viejo");
+
+      const renamed = await http.patch(owner.token, `/customers/${c.id}`, {
+        name: "Nombre nuevo",
+        phone: "3109998877",
+        notes: "Paga los viernes",
+      });
+      expect(renamed.status).toBe(200);
+      expect(renamed.body).toMatchObject({
+        name: "Nombre nuevo",
+        phone: "3109998877",
+        notes: "Paga los viernes",
+        creditLimit: 100_000,
+      });
+
+      const cleared = await http.patch(owner.token, `/customers/${c.id}`, { phone: null, notes: null });
+      expect(cleared.status).toBe(200);
+      expect(cleared.body).toMatchObject({ phone: null, notes: null });
+    });
+
+    it("rechaza cambiar a un teléfono que ya usa otro cliente (409)", async () => {
+      const a = await createCustomer(owner.token, 0, "Cliente A");
+      const b = await createCustomer(owner.token, 0, "Cliente B");
+      const phoneOfA = (await http.get(owner.token, `/customers/${a.id}`)).body.phone;
+
+      const res = await http.patch(owner.token, `/customers/${b.id}`, { phone: phoneOfA });
+      expect(res.status).toBe(409);
+    });
+  });
+
+  describe("activar y desactivar", () => {
     it("no deja desactivar a un cliente con deuda (409)", async () => {
       const c = await createCustomer(owner.token, 100_000);
       ok(await sale(owner.token, "CREDIT", 10_000, c.id));
       expect((await http.patch(owner.token, `/customers/${c.id}`, { active: false })).status).toBe(409);
     });
 
-    it("un cliente sin deuda se desactiva y sale de la lista", async () => {
-      const c = await createCustomer(owner.token, 100_000);
-      expect((await http.patch(owner.token, `/customers/${c.id}`, { active: false })).status).toBe(200);
+    it("un cliente inactivo sale de la lista normal, aparece en ?status=inactive y se puede reactivar", async () => {
+      const c = await createCustomer(owner.token, 100_000, "Cliente Inactivo");
+
+      ok(await http.patch(owner.token, `/customers/${c.id}`, { active: false }), 200);
       expect((await http.get(owner.token, "/customers")).body).toHaveLength(0);
+
+      const inactive = await http.get(owner.token, "/customers?status=inactive");
+      expect(inactive.body.map((x: { id: string }) => x.id)).toEqual([c.id]);
+
+      // Su ficha y su historial siguen disponibles.
+      const detail = await http.get(owner.token, `/customers/${c.id}`);
+      expect(detail.body.active).toBe(false);
+      expect((await http.get(owner.token, `/customers/${c.id}/statement`)).status).toBe(200);
+
+      ok(await http.patch(owner.token, `/customers/${c.id}`, { active: true }), 200);
+      expect((await http.get(owner.token, "/customers")).body).toHaveLength(1);
+      expect((await http.get(owner.token, "/customers?status=inactive")).body).toHaveLength(0);
+    });
+
+    it("solo el dueño puede desactivar o reactivar (403 al cajero)", async () => {
+      const cashier = await addCashier(owner.storeId);
+      const c = await createCustomer(owner.token, 0);
+      expect((await http.patch(cashier, `/customers/${c.id}`, { active: false })).status).toBe(403);
+
+      ok(await http.patch(owner.token, `/customers/${c.id}`, { active: false }), 200);
+      expect((await http.patch(cashier, `/customers/${c.id}`, { active: true })).status).toBe(403);
+    });
+
+    it("rechaza un status inválido (400)", async () => {
+      expect((await http.get(owner.token, "/customers?status=otro")).status).toBe(400);
     });
   });
 
@@ -122,6 +179,3 @@ describe("clientes", () => {
     expect((await pay(other.token, mine.id, 1_000)).status).toBe(404);
   });
 });
-
-
-
