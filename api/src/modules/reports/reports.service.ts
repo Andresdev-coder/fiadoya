@@ -1,6 +1,6 @@
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../middlewares/errorHandler";
-import { dayRange, todayCO } from "../../utils/dates";
+import { dateCO, dayRange, todayCO } from "../../utils/dates";
 import { balancesFor } from "../customers/customers.service";
 
 const DAY_MS = 86_400_000;
@@ -170,4 +170,95 @@ export async function listClosings(storeId: string) {
     orderBy: { date: "desc" },
     take: 31,
   });
+}
+
+const AGING = [
+  { key: "0-15", label: "0 a 15 días", max: 15 },
+  { key: "16-30", label: "16 a 30 días", max: 30 },
+  { key: "31-60", label: "31 a 60 días", max: 60 },
+  { key: "60+", label: "Más de 60 días", max: Infinity },
+] as const;
+
+/** Las últimas n fechas (AAAA-MM-DD) terminando en `end`, de la más antigua a la más reciente. */
+function lastDays(end: string, n: number) {
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(`${end}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - (n - 1 - i));
+    return d.toISOString().slice(0, 10);
+  });
+}
+
+/** Suma valores por día calendario de Colombia. */
+function sumByDay(rows: { createdAt: Date; value: number }[]) {
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const day = dateCO(r.createdAt);
+    map.set(day, (map.get(day) ?? 0) + r.value);
+  }
+  return map;
+}
+
+export async function dashboard(storeId: string) {
+  const today = todayCO();
+  const monthStart = `${today.slice(0, 8)}01`;
+  const days = lastDays(today, 30);
+  const monthRange = dayRange(monthStart, today);
+  const range30 = dayRange(days[0], today);
+
+  const [debt, monthSales, monthPayments, sales30, payments30] = await Promise.all([
+    overdue(storeId, 0),
+    prisma.sale.groupBy({
+      by: ["type"],
+      where: { storeId, status: "ACTIVE", createdAt: monthRange },
+      _sum: { total: true },
+    }),
+    prisma.payment.aggregate({
+      where: { storeId, status: "ACTIVE", createdAt: monthRange },
+      _sum: { amount: true },
+    }),
+    prisma.sale.findMany({
+      where: { storeId, type: "CREDIT", status: "ACTIVE", createdAt: range30 },
+      select: { total: true, createdAt: true },
+    }),
+    prisma.payment.findMany({
+      where: { storeId, status: "ACTIVE", createdAt: range30 },
+      select: { amount: true, createdAt: true },
+    }),
+  ]);
+
+  const creditByDay = sumByDay(sales30.map((s) => ({ createdAt: s.createdAt, value: s.total })));
+  const paymentsByDay = sumByDay(payments30.map((p) => ({ createdAt: p.createdAt, value: p.amount })));
+
+  // Cada cliente se ubica según su deuda más antigua sin cubrir.
+  const aging = AGING.map((bucket, i) => {
+    const previousMax = i === 0 ? -1 : AGING[i - 1].max;
+    const inBucket = debt.customers.filter((c) => c.daysOverdue > previousMax && c.daysOverdue <= bucket.max);
+    return {
+      key: bucket.key,
+      label: bucket.label,
+      amount: inBucket.reduce((sum, c) => sum + c.balance, 0),
+      customers: inBucket.length,
+    };
+  });
+
+  return {
+    date: today,
+    receivable: { total: debt.totalDebt, customers: debt.count, aging },
+    month: {
+      from: monthStart,
+      to: today,
+      credit: monthSales.find((s) => s.type === "CREDIT")?._sum.total ?? 0,
+      cashSales: monthSales.find((s) => s.type === "CASH")?._sum.total ?? 0,
+      collected: monthPayments._sum.amount ?? 0,
+    },
+    daily: days.map((date) => ({
+      date,
+      credit: creditByDay.get(date) ?? 0,
+      payments: paymentsByDay.get(date) ?? 0,
+    })),
+    topDebtors: [...debt.customers]
+      .sort((a, b) => b.balance - a.balance)
+      .slice(0, 5)
+      .map((c) => ({ id: c.id, name: c.name, balance: c.balance, daysOverdue: c.daysOverdue })),
+  };
 }

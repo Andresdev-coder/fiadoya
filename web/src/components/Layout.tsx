@@ -1,4 +1,14 @@
-import { ClipboardList, LogOut, Menu, Moon, ShoppingCart, Sun, Users, X } from "lucide-react";
+import {
+  ClipboardList,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  ShoppingCart,
+  Sun,
+  Users,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import { useAuth } from "../hooks/useAuth";
@@ -7,7 +17,9 @@ import { Logo } from "./Logo";
 
 const link = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
-    isActive ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"
+    isActive
+      ? "bg-emerald-600 text-white shadow-sm"
+      : "text-slate-600 hover:bg-slate-100"
   }`;
 
 export function Layout() {
@@ -15,10 +27,16 @@ export function Layout() {
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
 
+  const isOwner = user?.role === "OWNER";
   const items = [
+    ...(isOwner
+      ? [{ to: "/inicio", label: "Inicio", icon: LayoutDashboard }]
+      : []),
     { to: "/clientes", label: "Clientes", icon: Users },
     { to: "/ventas/nueva", label: "Nueva venta", icon: ShoppingCart },
-    ...(user?.role === "OWNER" ? [{ to: "/reportes", label: "Reportes", icon: ClipboardList }] : []),
+    ...(isOwner
+      ? [{ to: "/reportes", label: "Reportes", icon: ClipboardList }]
+      : []),
   ];
 
   const initials = (user?.name ?? "?")
@@ -32,13 +50,22 @@ export function Layout() {
     <div className="min-h-screen">
       {/* Barra superior (celular) */}
       <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-white px-4 py-3 lg:hidden">
-        <button onClick={() => setOpen(true)} aria-label="Abrir menú" className="rounded-lg p-2 hover:bg-slate-100">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Abrir menú"
+          className="rounded-lg p-2 hover:bg-slate-100"
+        >
           <Menu size={20} />
         </button>
         <Logo />
       </header>
 
-      {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />}
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
       <aside
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-white p-4 transition-transform lg:translate-x-0 ${
@@ -58,7 +85,12 @@ export function Layout() {
 
         <nav className="mt-6 flex flex-1 flex-col gap-1">
           {items.map(({ to, label, icon: Icon }) => (
-            <NavLink key={to} to={to} className={link} onClick={() => setOpen(false)}>
+            <NavLink
+              key={to}
+              to={to}
+              className={link}
+              onClick={() => setOpen(false)}
+            >
               <Icon size={18} /> {label}
             </NavLink>
           ))}
@@ -79,7 +111,9 @@ export function Layout() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{user?.name}</p>
-              <p className="text-xs text-slate-500">{user?.role === "OWNER" ? "Dueño" : "Cajero"}</p>
+              <p className="text-xs text-slate-500">
+                {user?.role === "OWNER" ? "Dueño" : "Cajero"}
+              </p>
             </div>
             <button
               onClick={logout}

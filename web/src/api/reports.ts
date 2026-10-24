@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { CashClosing, DailySummary, Overdue } from "./types";
+import type { CashClosing, DailySummary, DashboardData, Overdue } from "./types";
 
 export function useOverdue(minDays: number) {
   return useQuery({
@@ -31,5 +31,12 @@ export function useCreateClosing() {
     mutationFn: (input: { date: string; countedAmount: number }) =>
       api<CashClosing>("/cash-closings", { method: "POST", body: input }),
     onSettled: () => qc.invalidateQueries({ queryKey: ["closings"] }),
+  });
+}
+
+export function useDashboard() {
+  return useQuery({
+    queryKey: ["reports", "dashboard"],
+    queryFn: () => api<DashboardData>("/reports/dashboard"),
   });
 }

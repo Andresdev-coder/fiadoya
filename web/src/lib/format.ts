@@ -27,3 +27,16 @@ export const formatDateTime = (iso: string) => dateTime.format(new Date(iso));
 
 
 export const formatCOP = (n: number) => cop.format(n);
+
+const compact = new Intl.NumberFormat("es-CO", { notation: "compact", maximumFractionDigits: 1 });
+
+export const formatCompact = (n: number) => compact.format(n);
+
+const monthFormat = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "America/Bogota" });
+const shortDateFormat = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", timeZone: "America/Bogota" });
+
+/** Para mostrar mes y año (ej: enero de 2026). */
+export const formatMonth = (iso: string) => monthFormat.format(new Date(iso));
+
+/** Para fechas cortas (ej: 24 oct). */
+export const formatShortDate = (iso: string) => shortDateFormat.format(new Date(iso));

@@ -11,6 +11,10 @@ reportsRouter.get("/overdue", async (req, res) => {
   res.json(await service.overdue(req.user!.storeId, minDays));
 });
 
+reportsRouter.get("/dashboard", async (req, res) => {
+  res.json(await service.dashboard(req.user!.storeId));
+});
+
 reportsRouter.get("/daily-summary", async (req, res) => {
   const { date } = dailySummarySchema.parse(req.query);
   res.json(await service.dailySummary(req.user!.storeId, date));

@@ -103,3 +103,18 @@ export type PaymentRow = {
 };
 
 export type AuthResponse = { token: string; user: User };
+
+export type AgingBucket = {
+  key: "0-15" | "16-30" | "31-60" | "60+";
+  label: string;
+  amount: number;
+  customers: number;
+};
+
+export type DashboardData = {
+  date: string;
+  receivable: { total: number; customers: number; aging: AgingBucket[] };
+  month: { from: string; to: string; credit: number; collected: number; cashSales: number };
+  daily: { date: string; credit: number; payments: number }[];
+  topDebtors: { id: string; name: string; balance: number; daysOverdue: number }[];
+};
