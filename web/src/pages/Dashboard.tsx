@@ -234,8 +234,9 @@ export default function Dashboard() {
     <section className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold">Hola, {user?.name.split(" ")[0]}</h1>
-        <p className="text-sm capitalize text-slate-500">
-          {formatMonth(month.from)}
+        <p className="text-sm text-slate-500">
+          {formatMonth(month.from).charAt(0).toUpperCase() +
+            formatMonth(month.from).slice(1)}
         </p>
       </div>
 

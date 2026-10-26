@@ -13,7 +13,17 @@ const dateTime = new Intl.DateTimeFormat("es-CO", {
 const day = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" });
 const dayUtc = new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "UTC" });
 
+const compact = new Intl.NumberFormat("es-CO", { notation: "compact", maximumFractionDigits: 1 });
+
+// Estas dos reciben un día suelto (AAAA-MM-DD), por eso se formatean en UTC.
+const monthFormat = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "UTC" });
+const shortDateFormat = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", timeZone: "UTC" });
+
+export const formatCOP = (n: number) => cop.format(n);
+export const formatCompact = (n: number) => compact.format(n);
+
 /** Para fechas con hora real (ventas, abonos). */
+export const formatDateTime = (iso: string) => dateTime.format(new Date(iso));
 export const formatDay = (iso: string) => day.format(new Date(iso));
 
 /** Para columnas de solo fecha (cierres de caja): se guardan como medianoche UTC. */
@@ -23,20 +33,8 @@ export const formatDateOnly = (iso: string) => dayUtc.format(new Date(iso));
 export const todayCO = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
 
-export const formatDateTime = (iso: string) => dateTime.format(new Date(iso));
+/** Mes y año de un día AAAA-MM-DD (ej: octubre de 2026). */
+export const formatMonth = (ymd: string) => monthFormat.format(new Date(`${ymd}T00:00:00Z`));
 
-
-export const formatCOP = (n: number) => cop.format(n);
-
-const compact = new Intl.NumberFormat("es-CO", { notation: "compact", maximumFractionDigits: 1 });
-
-export const formatCompact = (n: number) => compact.format(n);
-
-const monthFormat = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric", timeZone: "America/Bogota" });
-const shortDateFormat = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", timeZone: "America/Bogota" });
-
-/** Para mostrar mes y año (ej: enero de 2026). */
-export const formatMonth = (iso: string) => monthFormat.format(new Date(iso));
-
-/** Para fechas cortas (ej: 24 oct). */
-export const formatShortDate = (iso: string) => shortDateFormat.format(new Date(iso));
+/** Fecha corta de un día AAAA-MM-DD (ej: 24 oct). */
+export const formatShortDate = (ymd: string) => shortDateFormat.format(new Date(`${ymd}T00:00:00Z`));

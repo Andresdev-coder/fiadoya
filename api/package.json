@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "dotenv run -f .env.test -- prisma migrate deploy",
-    "db:deploy:prod": "dotenv run -f .env.production -- prisma migrate deploy"
+    "db:deploy:prod": "dotenv run -f .env.production -- prisma migrate deploy",
+    "seed:demo": "tsx --env-file=.env scripts/seed-demo.ts",
+    "seed:demo:prod": "dotenv run -f .env.production -- tsx scripts/seed-demo.ts"
   },
   "keywords": [],
   "author": "",

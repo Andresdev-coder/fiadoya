@@ -8,6 +8,13 @@ import { Field } from "../components/Field";
 import { useAuth } from "../hooks/useAuth";
 import { useDelayedFlag } from "../hooks/useDelayedFlag";
 
+// Cuentas de la demostración (se crean con `pnpm seed:demo:prod`).
+const DEMO_PASSWORD = "Demo12345";
+const DEMO_ACCOUNTS = [
+  { label: "Cuenta de dueño", email: "demo@fiadoya.app" },
+  { label: "Cuenta de cajero", email: "cajero@fiadoya.app" },
+];
+
 export default function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -18,6 +25,12 @@ export default function Login() {
   const slow = useDelayedFlag(busy);
 
   if (user) return <Navigate to="/" replace />;
+
+  function fillDemo(demoEmail: string) {
+    setEmail(demoEmail);
+    setPassword(DEMO_PASSWORD);
+    setError("");
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -34,7 +47,10 @@ export default function Login() {
   }
 
   return (
-    <AuthShell title="Bienvenido de nuevo" subtitle="Ingresa a tu tienda para ver tus cuentas.">
+    <AuthShell
+      title="Bienvenido de nuevo"
+      subtitle="Ingresa a tu tienda para ver tus cuentas."
+    >
       <form onSubmit={onSubmit} className="space-y-4">
         <Field
           label="Correo"
@@ -55,7 +71,11 @@ export default function Login() {
           required
         />
 
-        {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        {error && (
+          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
         <SlowHint show={slow} />
 
         <button
@@ -66,9 +86,38 @@ export default function Login() {
           {busy ? "Ingresando…" : "Ingresar"}
         </button>
 
+        <div className="relative py-1 text-center">
+          <div className="absolute inset-x-0 top-1/2 border-t" />
+          <span className="relative bg-white px-3 text-xs text-slate-500">
+            o prueba la demostración
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {DEMO_ACCOUNTS.map((account) => (
+            <button
+              key={account.email}
+              type="button"
+              disabled={busy}
+              onClick={() => fillDemo(account.email)}
+              className="rounded-lg border py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-60"
+            >
+              {account.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-center text-xs text-slate-500">
+          Llenan el formulario con una cuenta ficticia (contraseña{" "}
+          <strong>{DEMO_PASSWORD}</strong>); solo falta pulsar Ingresar.
+          Cualquier visitante puede modificar estos datos.
+        </p>
+
         <p className="text-center text-sm text-slate-500">
           ¿Tu tienda aún no está?{" "}
-          <Link to="/register" className="font-medium text-emerald-700 hover:underline">
+          <Link
+            to="/register"
+            className="font-medium text-emerald-700 hover:underline"
+          >
             Regístrala
           </Link>
         </p>
