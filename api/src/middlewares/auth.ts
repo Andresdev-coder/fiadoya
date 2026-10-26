@@ -2,21 +2,31 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import type { Role } from "../generated/prisma/client";
 import { env } from "../config/env";
+import { prisma } from "../config/prisma";
 import { AppError } from "./errorHandler";
 
 type TokenPayload = { sub: string; storeId: string; role: Role };
 
-export function authenticate(req: Request, _res: Response, next: NextFunction) {
+export async function authenticate(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) throw new AppError(401, "Token requerido");
 
+  let payload: TokenPayload;
   try {
-    const payload = jwt.verify(header.slice(7), env.JWT_SECRET) as TokenPayload;
-    req.user = { id: payload.sub, storeId: payload.storeId, role: payload.role };
-    next();
+    payload = jwt.verify(header.slice(7), env.JWT_SECRET) as TokenPayload;
   } catch {
     throw new AppError(401, "Token inválido o expirado");
   }
+
+  // El token solo prueba quién eres; el estado real (activo, tienda, rol) se consulta en la base.
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    select: { storeId: true, role: true, active: true },
+  });
+  if (!user || !user.active) throw new AppError(401, "Tu sesión ya no es válida");
+
+  req.user = { id: payload.sub, storeId: user.storeId, role: user.role };
+  next();
 }
 
 export function requireRole(...roles: Role[]) {

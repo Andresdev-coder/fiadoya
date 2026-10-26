@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import NewSale from "./pages/NewSale";
 import Register from "./pages/Register";
 import Reports from "./pages/Reports";
+import SettingsPage from "./pages/Settings";
 
 function Home() {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ export default function App() {
           <Route element={<OwnerRoute />}>
             <Route path="/inicio" element={<Dashboard />} />
             <Route path="/reportes" element={<Reports />} />
+            <Route path="/configuracion" element={<SettingsPage />} />
           </Route>
         </Route>
       </Route>

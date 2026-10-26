@@ -4,6 +4,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Settings,
   ShoppingCart,
   Sun,
   Users,
@@ -35,7 +36,10 @@ export function Layout() {
     { to: "/clientes", label: "Clientes", icon: Users },
     { to: "/ventas/nueva", label: "Nueva venta", icon: ShoppingCart },
     ...(isOwner
-      ? [{ to: "/reportes", label: "Reportes", icon: ClipboardList }]
+      ? [
+          { to: "/reportes", label: "Reportes", icon: ClipboardList },
+          { to: "/configuracion", label: "Configuración", icon: Settings },
+        ]
       : []),
   ];
 

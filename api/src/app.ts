@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { env } from "./config/env";
+import { usersRouter } from "./modules/users/users.routes";
 import { errorHandler } from "./middlewares/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
 import { customersRouter } from "./modules/customers/customers.routes";
@@ -21,5 +22,6 @@ app.use("/sales", salesRouter)
 app.use("/payments", paymentsRouter)
 app.use("/reports", reportsRouter)
 app.use("/cash-closings", closingsRouter)
+app.use("/users", usersRouter);
 
 app.use(errorHandler);

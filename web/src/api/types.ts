@@ -111,6 +111,15 @@ export type AgingBucket = {
   customers: number;
 };
 
+export type StaffUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  active: boolean;
+  createdAt: string;
+};
+
 export type DashboardData = {
   date: string;
   receivable: { total: number; customers: number; aging: AgingBucket[] };
