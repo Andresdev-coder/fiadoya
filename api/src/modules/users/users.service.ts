@@ -16,12 +16,13 @@ const publicFields = {
   createdAt: true,
 } as const;
 
-export function list(storeId: string) {
-  return prisma.user.findMany({
+export async function list(storeId: string) {
+  const users = await prisma.user.findMany({
     where: { storeId },
     select: publicFields,
     orderBy: [{ role: "asc" }, { createdAt: "asc" }], // el dueño primero
   });
+  return users.map((u) => ({ ...u, isDemo: isDemoAccount(u.email) }));
 }
 
 /** Solo se crean cajeros: el rol de dueño nace únicamente al registrar la tienda. */

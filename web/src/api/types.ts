@@ -120,6 +120,7 @@ export type StaffUser = {
   role: Role;
   active: boolean;
   createdAt: string;
+  isDemo: boolean;
 };
 
 export type DashboardData = {

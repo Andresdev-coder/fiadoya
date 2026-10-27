@@ -284,14 +284,12 @@ describe("cuenta: contraseña y recuperación", () => {
   describe("cuentas de demostración", () => {
     it("una cuenta protegida no puede cambiar ni recuperar su contraseña (403)", async () => {
       const demoEmail = "demo-protegida@test.com";
-      const reg = await request(app)
-        .post("/auth/register")
-        .send({
-          storeName: "Tienda Demo",
-          name: "Demo",
-          email: demoEmail,
-          password: PASSWORD,
-        });
+      const reg = await request(app).post("/auth/register").send({
+        storeName: "Tienda Demo",
+        name: "Demo",
+        email: demoEmail,
+        password: PASSWORD,
+      });
       const session =
         reg.status === 201
           ? reg.body
@@ -303,6 +301,9 @@ describe("cuenta: contraseña y recuperación", () => {
             );
 
       expect(ok(await http.get(session.token, "/auth/me"), 200).isDemo).toBe(
+        true,
+      );
+      expect(ok(await http.get(session.token, "/users"), 200)[0].isDemo).toBe(
         true,
       );
       expect(

@@ -13,7 +13,8 @@
     "test:db": "dotenv run -f .env.test -- prisma migrate deploy",
     "db:deploy:prod": "dotenv run -f .env.production -- prisma migrate deploy",
     "seed:demo": "tsx --env-file=.env scripts/seed-demo.ts",
-    "seed:demo:prod": "dotenv run -f .env.production -- tsx scripts/seed-demo.ts"
+    "seed:demo:prod": "dotenv run -f .env.production -- tsx scripts/seed-demo.ts",
+    "cleanup:prod": "dotenv run -f .env.production -- tsx scripts/cleanup-stores.ts"
   },
   "keywords": [],
   "author": "",
