@@ -55,6 +55,9 @@ model User {
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
 
+  recoveryCodeHash  String?
+  passwordChangedAt DateTime?
+
   store    Store         @relation(fields: [storeId], references: [id])
   sales    Sale[]
   payments Payment[]

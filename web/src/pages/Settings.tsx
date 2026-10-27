@@ -7,6 +7,7 @@ import { useUpdateUser, useUsers } from "../api/users";
 import { Modal } from "../components/Modal";
 import { ResetPasswordForm } from "../components/ResetPasswordForm";
 import { StaffForm } from "../components/StaffForm";
+import { AccountCard } from "../components/AccountCard";
 
 const initials = (name: string) =>
   name
@@ -147,7 +148,7 @@ export default function SettingsPage() {
           <UserPlus size={18} /> Nuevo cajero
         </button>
       </div>
-
+      <AccountCard />
       <p className="rounded-xl bg-slate-100 p-4 text-sm text-slate-600">
         Los cajeros pueden registrar ventas, abonos y clientes. No ven los reportes ni pueden anular
         movimientos, cambiar cupos o desactivar clientes.

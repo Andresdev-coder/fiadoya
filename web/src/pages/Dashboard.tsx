@@ -22,6 +22,7 @@ import {
   formatMonth,
   formatShortDate,
 } from "../lib/format";
+import { RecoveryBanner } from "../components/RecoveryBanner";
 
 const AGING_STYLE: Record<AgingBucket["key"], { color: string; dot: string }> =
   {
@@ -239,7 +240,7 @@ export default function Dashboard() {
             formatMonth(month.from).slice(1)}
         </p>
       </div>
-
+      {user && !user.hasRecoveryCode && !user.isDemo && <RecoveryBanner />}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           icon={<Wallet size={16} />}

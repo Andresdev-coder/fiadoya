@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../middlewares/errorHandler";
 import { createUserSchema, updateUserSchema } from "./users.schemas";
+import { DEMO_LOCKED, isDemoAccount } from "../../utils/demo";
 
 const MAX_USERS = 10; // por tienda: evita abuso en la demo pública
 
@@ -52,13 +53,18 @@ export async function updateCashier(storeId: string, id: string, input: z.infer<
   const user = await prisma.user.findFirst({ where: { id, storeId } });
   if (!user) throw new AppError(404, "Usuario no encontrado");
   if (user.role !== "CASHIER") throw new AppError(403, "El dueño no se puede modificar desde aquí");
+  if (isDemoAccount(user.email)) throw new AppError(403, DEMO_LOCKED);
 
   return prisma.user.update({
     where: { id },
     data: {
       ...(input.name !== undefined && { name: input.name }),
       ...(input.active !== undefined && { active: input.active }),
-      ...(input.password !== undefined && { passwordHash: await bcrypt.hash(input.password, 10) }),
+      // Cambiar la contraseña también cierra las sesiones abiertas del cajero.
+      ...(input.password !== undefined && {
+        passwordHash: await bcrypt.hash(input.password, 10),
+        passwordChangedAt: new Date(),
+      }),
     },
     select: publicFields,
   });

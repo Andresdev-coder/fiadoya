@@ -5,6 +5,7 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32, "JWT_SECRET debe tener al menos 32 caracteres"),
   PORT: z.coerce.number().default(3000),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  DEMO_EMAILS: z.string().default(""),
 });
 
 export const env = schema.parse(process.env);

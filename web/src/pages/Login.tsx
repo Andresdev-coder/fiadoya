@@ -8,7 +8,8 @@ import { Field } from "../components/Field";
 import { useAuth } from "../hooks/useAuth";
 import { useDelayedFlag } from "../hooks/useDelayedFlag";
 
-// Cuentas de la demostración (se crean con `pnpm seed:demo:prod`).
+// La demostración solo aparece si el despliegue la activa con VITE_DEMO_MODE=true.
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 const DEMO_PASSWORD = "Demo12345";
 const DEMO_ACCOUNTS = [
   { label: "Cuenta de dueño", email: "demo@fiadoya.app" },
@@ -61,15 +62,23 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <Field
-          label="Contraseña"
-          type="password"
-          autoComplete="current-password"
-          icon={<Lock size={18} />}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div>
+          <Field
+            label="Contraseña"
+            type="password"
+            autoComplete="current-password"
+            icon={<Lock size={18} />}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Link
+            to="/recuperar"
+            className="mt-1.5 inline-block text-xs font-medium text-emerald-700 hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
 
         {error && (
           <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
@@ -86,31 +95,35 @@ export default function Login() {
           {busy ? "Ingresando…" : "Ingresar"}
         </button>
 
-        <div className="relative py-1 text-center">
-          <div className="absolute inset-x-0 top-1/2 border-t" />
-          <span className="relative bg-white px-3 text-xs text-slate-500">
-            o prueba la demostración
-          </span>
-        </div>
+        {DEMO_MODE && (
+          <>
+            <div className="relative py-1 text-center">
+              <div className="absolute inset-x-0 top-1/2 border-t" />
+              <span className="relative bg-white px-3 text-xs text-slate-500">
+                o prueba la demostración
+              </span>
+            </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          {DEMO_ACCOUNTS.map((account) => (
-            <button
-              key={account.email}
-              type="button"
-              disabled={busy}
-              onClick={() => fillDemo(account.email)}
-              className="rounded-lg border py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-60"
-            >
-              {account.label}
-            </button>
-          ))}
-        </div>
-        <p className="text-center text-xs text-slate-500">
-          Llenan el formulario con una cuenta ficticia (contraseña{" "}
-          <strong>{DEMO_PASSWORD}</strong>); solo falta pulsar Ingresar.
-          Cualquier visitante puede modificar estos datos.
-        </p>
+            <div className="grid grid-cols-2 gap-2">
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.email}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => fillDemo(account.email)}
+                  className="rounded-lg border py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-60"
+                >
+                  {account.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-center text-xs text-slate-500">
+              Llenan el formulario con una cuenta ficticia; solo falta pulsar
+              Ingresar. Cualquier visitante puede modificar los datos de la
+              demostración.
+            </p>
+          </>
+        )}
 
         <p className="text-center text-sm text-slate-500">
           ¿Tu tienda aún no está?{" "}

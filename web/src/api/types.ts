@@ -6,6 +6,8 @@ export type User = {
   email: string;
   role: Role;
   storeId: string;
+  hasRecoveryCode: boolean;
+  isDemo: boolean;
 };
 
 export type Customer = {

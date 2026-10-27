@@ -31,6 +31,7 @@ jobs:
       JWT_SECRET: clave-solo-para-pruebas-de-al-menos-32-caracteres
       PORT: "3001"
       CORS_ORIGIN: http://localhost:5173
+      DEMO_EMAILS: demo-protegida@test.com
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

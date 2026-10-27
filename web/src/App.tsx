@@ -8,13 +8,16 @@ import Customers from "./pages/Customers";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import NewSale from "./pages/NewSale";
+import Recover from "./pages/Recover";
 import Register from "./pages/Register";
 import Reports from "./pages/Reports";
 import SettingsPage from "./pages/Settings";
 
 function Home() {
   const { user } = useAuth();
-  return <Navigate to={user?.role === "OWNER" ? "/inicio" : "/clientes"} replace />;
+  return (
+    <Navigate to={user?.role === "OWNER" ? "/inicio" : "/clientes"} replace />
+  );
 }
 
 export default function App() {
@@ -22,6 +25,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/recuperar" element={<Recover />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
